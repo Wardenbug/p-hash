@@ -1,0 +1,24 @@
+{
+    "name": "p-hash",
+    "version": "0.0.1",
+    "description": "A library of reusable functions for perceptual hashing",
+    "main": "dist/p-hash.js",
+    "types": "dist/p-hash.d.ts",
+    "scripts": {
+        "build": "webpack",
+        "watch": "webpack --watch"
+    },
+    "devDependencies": {
+        "@types/node": "^18.11.18",
+        "@types/webpack-env": "^1.15.2",
+        "optimize-css-assets-webpack-plugin": "^5.0.3",
+        "terser-webpack-plugin": "^4.2.3",
+        "ts-loader": "^8.1.0",
+        "webpack": "^4.44.2",
+        "webpack-cli": "^3.3.12"
+    },
+    "dependencies": {
+        "jpeg-js": "^0.4.4",
+        "typescript": "^4.1.3"
+    }
+}
