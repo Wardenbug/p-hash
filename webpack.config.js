@@ -25,5 +25,11 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js']
+  },
+  externals: {
+    canvas: {
+      commonjs2: 'canvas',
+      commonjs: 'canvas',
+    }
   }
 };
