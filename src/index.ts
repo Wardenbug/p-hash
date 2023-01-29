@@ -1,25 +1,14 @@
-const fs = require('fs');
-const path = require('path');
 const jpeg = require('jpeg-js');
 const Canvas = require('canvas');
 
+import { getRawPixelData } from "./jpeg-pixel";
+import { readImage, saveImage } from "./utils";
+
 const MAX_SIZE = 8;
+type ImageFormat = 'RGBA' | 'RGB' | 'BGR' | 'BGRA';
 
 
-const hammingDistance = (h1: string, h2: string): number => {
-    if (h1.length !== h2.length) throw new Error('Hashes must be of equal length');
-
-    let dist_counter = 0;
-
-    for (let i = 0; i < h1.length; i++) {
-        if (h1[i] !== h2[i]) dist_counter++;
-    }
-
-    return dist_counter;
-};
-
-
-const resizeImage = async (imageBuffer: Buffer, maxSize = MAX_SIZE) => {
+const resizeImage = async (imageBuffer: Buffer, format: string, maxSize = MAX_SIZE) => {
     const image = new Canvas.Image();
 
     const width = maxSize
@@ -73,18 +62,6 @@ const toHash = (bits: any[]) => {
     return hexString;
 }
 
-function getImageFormat(imageBuffer: Buffer) {
-    if (imageBuffer.readUInt16BE(0) === 0xffd8) {
-        return "JPEG";
-    } else if (imageBuffer.toString("hex", 0, 4) === "89504e47") {
-        return "PNG";
-    } else {
-        return "Unknown";
-    }
-}
-
-type ImageFormat = 'RGBA' | 'RGB' | 'BGR' | 'BGRA';
-
 const getPixelColor = (buffer: Buffer, imageFormat: ImageFormat, x: number, y: number) => {
     let offset = 0;
 
@@ -125,26 +102,18 @@ const getPixelColor = (buffer: Buffer, imageFormat: ImageFormat, x: number, y: n
 };
 
 const findAverage = async (imageBuffer: Buffer) => {
-    await saveImage(imageBuffer, `test${+Date.now()}.jpg`);
-    const pixels = [];
-    for (let x = 0; x < MAX_SIZE; x++) {
-        for (let y = 0; y < MAX_SIZE; y++) {
-            const color = getPixelColor(imageBuffer, 'RGBA', x, y);
-            pixels.push(color);
-        }
-    };
+    const buff = getRawPixelData(imageBuffer);
 
-    const totalR = pixels.reduce((accumulator, value) => { return accumulator + value.r }, 0) / (MAX_SIZE * MAX_SIZE);
-    const totalG = pixels.reduce((accumulator, value) => { return accumulator + value.g }, 0) / (MAX_SIZE * MAX_SIZE);
-    const totalB = pixels.reduce((accumulator, value) => { return accumulator + value.b }, 0) / (MAX_SIZE * MAX_SIZE);
-
+    const totalR = buff.reduce((accumulator, value) => { return accumulator + value.red }, 0) / (MAX_SIZE * MAX_SIZE);
+    const totalG = buff.reduce((accumulator, value) => { return accumulator + value.green }, 0) / (MAX_SIZE * MAX_SIZE);
+    const totalB = buff.reduce((accumulator, value) => { return accumulator + (value.blue || 0) }, 0) / (MAX_SIZE * MAX_SIZE);
 
     const avg = (totalR + totalG + totalB) / 3;
 
     const bits: any = [];
 
-    pixels.forEach((el) => {
-        if (((el.r + el.g + el.b) / 3) < avg) {
+    buff.forEach((el) => {
+        if (((el.red + el.green + el.blue) / 3) < avg) {
             bits.push(0)
         } else {
             bits.push(1)
@@ -154,27 +123,8 @@ const findAverage = async (imageBuffer: Buffer) => {
     return toHash(bits);
 }
 
-
-const readImage = (path: string) =>
-    new Promise((resolve, reject) => {
-        fs.readFile(path, (err: string, buffer: Buffer) => {
-            if (err) reject(err);
-            else resolve(buffer);
-        });
-    });
-
-
-const saveImage = async (buffer: Buffer, path: string) =>
-    new Promise((resolve, reject) => {
-        fs.writeFile(path, buffer, (err: any) => {
-            if (err) reject(err);
-            else resolve(null);
-        });
-    });
-
-
 const getHash = async (image: Buffer) => {
-    const resized: any = await resizeImage(image);
+    const resized: any = await resizeImage(image, 'jpeg');
     const grayImage: Buffer = await grayScaleImage(resized);
     const hash = await findAverage(grayImage);
 

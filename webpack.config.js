@@ -30,6 +30,10 @@ module.exports = {
     canvas: {
       commonjs2: 'canvas',
       commonjs: 'canvas',
+    },
+    sharp: {
+      commonjs2: 'sharp',
+      commonjs: 'sharp',
     }
   }
 };
